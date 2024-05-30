@@ -1,0 +1,7 @@
+name: VariantCallingRNAseq
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - samtools
+    - varscan

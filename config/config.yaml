@@ -1,0 +1,6 @@
+# Default configurations for Variant Calling from RNAseq data
+samples: 'List of files with sample names'
+genome: 'genome.fasta'
+pvalue: 0.01,
+output_format: 1,
+vcf_file: 'all_samples.vcf'
