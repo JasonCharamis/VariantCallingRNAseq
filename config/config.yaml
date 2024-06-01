@@ -4,3 +4,4 @@ genome: 'genome.fasta'
 pvalue: 0.01,
 output_format: 1,
 vcf_file: 'all_samples.vcf'
+output_directory: '.'

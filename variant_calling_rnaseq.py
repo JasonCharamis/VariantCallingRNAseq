@@ -50,7 +50,6 @@ def parse_arguments():
     
 @task
 def _load_yaml_file(yaml_file) -> dict:
-
     import yaml
 
     with open(yaml_file, 'r') as file:
@@ -60,8 +59,8 @@ def _load_yaml_file(yaml_file) -> dict:
 
 @task
 def install_dependencies(env_yaml: str) -> None:
-
     import subprocess
+    
     subprocess.run(["mamba", "env", "update", "--file", env_yaml], check = True)
     config = _load_yaml_file(env_yaml)
     env_name = config['name']
@@ -70,7 +69,6 @@ def install_dependencies(env_yaml: str) -> None:
     
 @task
 def mpileup(samples, genome) -> None:
-
     import subprocess
     
     bams = ' '.join([f'{sample}.*bam' for sample in samples])
@@ -101,7 +99,7 @@ def varscan(
     import subprocess
     
     if mpileup:
-        cmd = f"varscan mpileup2snp {mpileup} --p-value {pvalue} --output-vcf {output_format} --output {vcf_file} """    
+        cmd = f"varscan mpileup2snp {mpileup} --p-value {pvalue} --output-vcf {output_format} --output {vcf_file}"
 
         try:
             subprocess.run(cmd, shell=True)
@@ -114,6 +112,9 @@ def varscan(
 @flow()
 def main_flow() -> None:
 
+    import os
+    import re
+
     # Parse arguments                    
     args = parse_arguments()
 
@@ -124,19 +125,28 @@ def main_flow() -> None:
     yaml_file = args.config_file if args.config_file else 'config/config.yaml'
     config = _load_yaml_file(yaml_file = yaml_file)
 
-    # Run samtools mpileup
-    mpileup(samples = [sample.strip('\n') for sample in open(config['samples'], 'r')], genome = config['genome'])
+
+    mpileup_file = re.compile(r"\.mpileup$")
+    vcf_file = re.compile(r"\.vcf$")
     
-    # Run VarScan2 to identify statistically significant SNPs
-    varscan(
-        mpileup = 'all_samples.mpileup',           
-        pvalue = config['pvalue'] if isinstance(config['pvalue'], float) else 0.01,
-        output_format = config['output_format'] if isinstance(config['output_format'], int) else 1,
-        vcf_file = config['vcf_file'] if isinstance(config['vcf_file'], str) else 'all_samples.vcf'
-    )
-        
-                
+    for filename in os.listdir(config['output_directory']):
+   
+        # Run samtools mpileup
+        if not mpileup_file.search(filename):
+            mpileup(samples = [sample.strip('\n') for sample in open(config['samples'], 'r')], genome = config['genome'])
+            
+        # Run VarScan2 to identify statistically significant SNPs
+        if not vcf_file.search(filename):
+            varscan(
+                mpileup_file = 'all_samples.mpileup',           
+                pvalue = config['pvalue'] if isinstance(config['pvalue'], float) else 0.01,
+                output_format = config['output_format'] if isinstance(config['output_format'], int) else 1,
+                vcf_file = config['vcf_file'] if isinstance(config['vcf_file'], str) else 'all_samples.vcf'
+            )
+               
 
 if __name__ == "__main__":
 #    main_flow.visualize()
     main_flow()
+    
+
